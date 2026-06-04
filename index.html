@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CP Management — Agent Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0e0f13;
+  --bg2:      #161820;
+  --bg3:      #1e2029;
+  --bg4:      #262830;
+  --line:     rgba(255,255,255,0.07);
+  --line2:    rgba(255,255,255,0.13);
+  --text:     #e8e9ee;
+  --text2:    #9a9caa;
+  --text3:    #5a5c6a;
+  --accent:   #4f8ef7;
+  --accent2:  #a78bfa;
+  --green:    #34d399;
+  --yellow:   #fbbf24;
+  --red:      #f87171;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --radius:   6px;
+  --radius2:  10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 52px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+.topbar-meta {
+  display: flex; align-items: center; gap: 16px;
+  font-size: 11px; color: var(--text3); font-family: var(--mono);
+}
+.status-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2);
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  animation: blink 2.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Layout ── */
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 52px);
+}
+
+/* ── Left Panel ── */
+.left-panel {
+  width: 320px;
+  min-width: 320px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg2);
+}
+
+.panel-section {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.panel-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* Natural language input */
+.nl-input-wrap { position: relative; }
+textarea#nl-query {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: var(--sans);
+  color: var(--text);
+  resize: none;
+  outline: none;
+  min-height: 72px;
+  max-height: 120px;
+  line-height: 1.55;
+  transition: border-color 0.15s;
+}
+textarea#nl-query:focus { border-color: var(--accent); }
+textarea#nl-query::placeholder { color: var(--text3); }
+
+.ask-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 9px 0;
+  font-size: 13px;
+  font-family: var(--sans);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.ask-btn:hover { opacity: 0.88; }
+.ask-btn:active { transform: scale(0.98); }
+.ask-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; }
+
+/* Divider */
+.or-divider {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--text3); font-family: var(--mono);
+  padding: 10px 0 2px;
+}
+.or-divider::before, .or-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
+
+/* API dropdown */
+.api-select-wrap { margin-top: 10px; }
+select#api-dropdown {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a9caa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  transition: border-color 0.15s;
+}
+select#api-dropdown:focus { border-color: var(--accent); }
+select#api-dropdown option { background: var(--bg3); }
+
+.use-api-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 8px 0;
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.use-api-btn:hover { background: rgba(79,142,247,0.08); }
+
+/* Param fields */
+#param-fields { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.param-group { display: flex; flex-direction: column; gap: 4px; }
+.param-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+input.param-input {
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+input.param-input:focus { border-color: var(--accent); }
+input.param-input::placeholder { color: var(--text3); }
+
+/* Quick queries */
+.quick-list { display: flex; flex-direction: column; gap: 4px; }
+.quick-item {
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+  transition: background 0.13s, color 0.13s;
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--sans);
+}
+.quick-item:hover { background: var(--bg3); color: var(--text); }
+.quick-item::before {
+  content: '›';
+  color: var(--text3);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Right panel ── */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.result-header {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg2);
+  min-height: 52px;
+}
+.result-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.api-tag {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  background: rgba(79,142,247,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(79,142,247,0.2);
+}
+.reason-text {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+.record-count {
+  font-size: 11px;
+  color: var(--green);
+  font-family: var(--mono);
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.15);
+  padding: 3px 10px;
+  border-radius: 3px;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+.empty-icon {
+  font-size: 42px;
+  opacity: 0.3;
+  margin-bottom: 4px;
+}
+.empty-label { font-size: 13px; color: var(--text3); }
+.empty-sub { font-size: 11px; color: var(--text3); opacity: 0.6; }
+
+/* Loading */
+.loading-state {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.loading-state.visible { display: flex; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--line2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+}
+.loading-step {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  opacity: 0.6;
+}
+
+/* Result body */
+.result-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: none;
+}
+.result-body.visible { display: block; }
+
+/* Summary card */
+.summary-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius2);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.summary-icon { font-size: 22px; }
+.summary-info { flex: 1; }
+.summary-main { font-size: 13px; color: var(--text); font-weight: 500; }
+.summary-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 3px; }
+
+/* Table */
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius2);
+  overflow: hidden;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.data-table thead tr {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line2);
+}
+.data-table th {
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--text3);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 10px 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr { transition: background 0.12s; }
+.data-table tbody tr:hover { background: var(--bg3); }
+.data-table td.null-val { color: var(--text3); font-style: italic; }
+.data-table td.bool-true { color: var(--green); }
+.data-table td.bool-false { color: var(--red); }
+.data-table td.num-val { color: var(--accent2); }
+
+/* Card display */
+.info-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.info-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius2);
+  padding: 14px 16px;
+}
+.info-card-key {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+.info-card-val {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  word-break: break-all;
+}
+
+/* Bool card */
+.bool-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius2);
+  padding: 28px;
+  text-align: center;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.bool-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  font-family: var(--mono);
+}
+.bool-badge.exists { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.bool-badge.not-exists { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+.bool-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+
+/* Error state */
+.error-card {
+  background: rgba(248,113,113,0.06);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: var(--radius2);
+  padding: 18px 20px;
+}
+.error-title { font-size: 13px; color: var(--red); font-weight: 500; margin-bottom: 6px; }
+.error-msg { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.error-prompt {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--yellow);
+  font-family: var(--mono);
+  padding: 8px 12px;
+  background: rgba(251,191,36,0.06);
+  border-radius: var(--radius);
+  border: 1px solid rgba(251,191,36,0.15);
+}
+
+/* URL bar */
+.url-bar {
+  margin-top: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  display: flex; align-items: center; gap: 8px;
+  word-break: break-all;
+}
+.url-method {
+  background: rgba(79,142,247,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 3px;
+  padding: 1px 7px;
+  font-size: 10px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-logo">
+    ◈ CP MANAGEMENT
+    <span class="logo-badge">AGENT</span>
+  </div>
+  <div class="topbar-meta">
+    <div class="status-indicator">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">n8n connected</span>
+    </div>
+    <span id="webhook-display" style="cursor:pointer;" onclick="copyWebhook()" title="Copy webhook URL">
+      localhost:5678/webhook/cp-management-agent
+    </span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+
+    <!-- Natural language -->
+    <div class="panel-section">
+      <div class="panel-label">Natural Language Query</div>
+      <div class="nl-input-wrap">
+        <textarea id="nl-query" placeholder="e.g. Show pending fees for customer 1042..." rows="3"
+          onkeydown="nlKey(event)"></textarea>
+      </div>
+      <button class="ask-btn" id="ask-btn" onclick="submitNL()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Ask Agent
+      </button>
+
+      <div class="or-divider">or</div>
+
+      <!-- Dropdown -->
+      <div class="api-select-wrap">
+        <select id="api-dropdown" onchange="onApiChange()">
+          <option value="">— Select API directly —</option>
+          <option value="viewAllCustomer">viewAllCustomer — List all customers</option>
+          <option value="getCustomerById_account">getCustomerById (account) — Transactions</option>
+          <option value="getPendingTransactionByCustomerId">getPendingTransactions — Pending txns</option>
+          <option value="isCustomerExists">isCustomerExists — Check existence</option>
+          <option value="getCustomerByCustomerName">getByCustomerName — Search by name</option>
+          <option value="getCustomerById_direct">getById — Customer profile</option>
+          <option value="getTransactionByCustomerId_fees">getTransactionById (fees) — Fee txns</option>
+          <option value="getFeesByCustId">getFeesByCustId — All fees</option>
+          <option value="getPendingStatusByCustId">getPendingStatus — Pending fee status</option>
+          <option value="downloadFeesReportForCust">downloadFeesReport — Export Excel</option>
+        </select>
+      </div>
+      <button class="use-api-btn" onclick="submitDropdown()">Use Selected API →</button>
+    </div>
+
+    <!-- Params -->
+    <div class="panel-section">
+      <div class="panel-label">Parameters</div>
+      <div id="param-fields">
+        <div class="param-group">
+          <div class="param-label">Customer ID</div>
+          <input class="param-input" id="param-customer-id" type="text" placeholder="e.g. 1042"/>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Customer Name</div>
+          <input class="param-input" id="param-customer-name" type="text" placeholder="e.g. John Doe"/>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Page Number</div>
+          <input class="param-input" id="param-page" type="number" value="1" min="0"/>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Page Size</div>
+          <input class="param-input" id="param-size" type="number" value="10" min="1"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick queries -->
+    <div class="panel-section" style="flex:1; overflow-y:auto;">
+      <div class="panel-label">Quick Queries</div>
+      <div class="quick-list">
+        <button class="quick-item" onclick="setQuery('Show all customers')">Show all customers</button>
+        <button class="quick-item" onclick="setQuery('Get pending transactions for customer 1001')">Pending transactions for 1001</button>
+        <button class="quick-item" onclick="setQuery('Check if customer 2055 exists')">Check if customer 2055 exists</button>
+        <button class="quick-item" onclick="setQuery('Get all fees for customer 3010')">All fees for customer 3010</button>
+        <button class="quick-item" onclick="setQuery('Show pending fee status for customer 1042')">Pending fee status for 1042</button>
+        <button class="quick-item" onclick="setQuery('Get fee transactions for customer 5001')">Fee transactions for 5001</button>
+        <button class="quick-item" onclick="setQuery('Find customer by name Bhavesh')">Find customer named Bhavesh</button>
+        <button class="quick-item" onclick="setQuery('Download fees report for customer 1001')">Download report for 1001</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right panel -->
+  <div class="right-panel">
+
+    <div class="result-header" id="result-header">
+      <div class="result-title" id="result-title">
+        Results
+      </div>
+      <span class="record-count" id="record-count" style="display:none;"></span>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">◈</div>
+      <div class="empty-label">No query yet</div>
+      <div class="empty-sub">Type a question or select an API from the left panel</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Selecting API...</div>
+      <div class="loading-step" id="loading-step">Agent is analyzing your query</div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-body" id="result-body"></div>
+
+  </div>
+</div>
+
+<script>
+const WEBHOOK = 'http://localhost:5678/webhook/cp-management-agent';
+const API_BASE = 'http://localhost:8080';
+
+function setQuery(q) {
+  document.getElementById('nl-query').value = q;
+  document.getElementById('nl-query').focus();
+}
+
+function nlKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitNL(); }
+}
+
+function onApiChange() {
+  const val = document.getElementById('api-dropdown').value;
+  const needsName = val === 'getCustomerByCustomerName';
+  const noId = val === 'viewAllCustomer' || val === '';
+  document.getElementById('param-customer-id').disabled = noId;
+  document.getElementById('param-customer-id').style.opacity = noId ? '0.4' : '1';
+  document.getElementById('param-customer-name').disabled = !needsName;
+  document.getElementById('param-customer-name').style.opacity = needsName ? '1' : '0.4';
+}
+
+function gatherParams() {
+  return {
+    customerId: document.getElementById('param-customer-id').value.trim() || null,
+    customerName: document.getElementById('param-customer-name').value.trim() || null,
+    pageNumber: parseInt(document.getElementById('param-page').value) || 1,
+    pageSize: parseInt(document.getElementById('param-size').value) || 10
+  };
+}
+
+async function submitNL() {
+  const query = document.getElementById('nl-query').value.trim();
+  if (!query) return;
+  const params = gatherParams();
+  await doRequest({ query, ...params });
+}
+
+async function submitDropdown() {
+  const selectedApi = document.getElementById('api-dropdown').value;
+  if (!selectedApi) { alert('Please select an API from the dropdown.'); return; }
+  const params = gatherParams();
+  await doRequest({ query: `Using API: ${selectedApi}`, selectedApi, ...params });
+}
+
+function setLoading(step1, step2) {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('result-body').classList.remove('visible');
+  document.getElementById('loading-state').classList.add('visible');
+  document.getElementById('loading-text').textContent = step1;
+  document.getElementById('loading-step').textContent = step2;
+  document.getElementById('ask-btn').disabled = true;
+  document.getElementById('record-count').style.display = 'none';
+}
+
+function setStatus(text, ok = true) {
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-dot').style.background = ok ? '#34d399' : '#f87171';
+}
+
+async function doRequest(payload) {
+  setLoading('Contacting Agent...', 'Sending query to n8n');
+  setStatus('Querying...');
+
+  const steps = [
+    ['Selecting API...', 'Ollama is analyzing your query'],
+    ['Calling CP API...', 'Fetching data from backend'],
+    ['Formatting Results...', 'Structuring response for display']
+  ];
+  let stepIdx = 0;
+  const stepTimer = setInterval(() => {
+    if (stepIdx < steps.length) {
+      document.getElementById('loading-text').textContent = steps[stepIdx][0];
+      document.getElementById('loading-step').textContent = steps[stepIdx][1];
+      stepIdx++;
+    }
+  }, 1200);
+
+  try {
+    const res = await fetch(WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    clearInterval(stepTimer);
+    const data = await res.json();
+    renderResult(data, payload.query || payload.selectedApi);
+    setStatus('Ready');
+
+  } catch (err) {
+    clearInterval(stepTimer);
+    setStatus('Error', false);
+    renderError({
+      error: true,
+      error_type: 'CONNECTION_ERROR',
+      message: err.message,
+      prompt: 'Make sure n8n is running and the workflow is active.'
+    }, payload.query);
+  }
+
+  document.getElementById('ask-btn').disabled = false;
+}
+
+function renderResult(data, query) {
+  document.getElementById('loading-state').classList.remove('visible');
+  const body = document.getElementById('result-body');
+  body.classList.add('visible');
+
+  // Header
+  const title = document.getElementById('result-title');
+  const countEl = document.getElementById('record-count');
+
+  if (data.error) {
+    title.innerHTML = `<span style="color:var(--red)">⚠ Error</span>`;
+    countEl.style.display = 'none';
+    renderError(data, query);
+    return;
+  }
+
+  title.innerHTML = `
+    Results
+    <span class="api-tag">${data.api_key || ''}</span>
+    <span class="reason-text">${data.reason || ''}</span>`;
+
+  if (data.total !== undefined) {
+    countEl.textContent = `${data.total} record${data.total !== 1 ? 's' : ''}`;
+    countEl.style.display = 'inline-flex';
+  }
+
+  let html = '';
+
+  // Summary card
+  if (data.summary) {
+    const icon = data.display_type === 'download' ? '📥'
+               : data.display_type === 'card' ? '🔍'
+               : '📊';
+    html += `
+      <div class="summary-card">
+        <div class="summary-icon">${icon}</div>
+        <div class="summary-info">
+          <div class="summary-main">${esc(data.summary)}</div>
+          <div class="summary-sub">Query: "${esc(query || '')}"</div>
+        </div>
+      </div>`;
+  }
+
+  if (data.display_type === 'table' && data.rows && data.rows.length > 0) {
+    html += renderTable(data.columns, data.rows);
+  }
+  else if (data.display_type === 'card' && data.rows && data.rows.length > 0) {
+    html += renderCards(data.rows);
+  }
+  else if (data.display_type === 'download') {
+    html += `
+      <div style="text-align:center; padding:30px;">
+        <div style="font-size:40px; margin-bottom:16px;">📥</div>
+        <div style="font-size:14px; color:var(--text); margin-bottom:10px;">Fees report is ready</div>
+        <a href="${API_BASE}/api/fees/downloadFeesReportForCust?customerId=${document.getElementById('param-customer-id').value}"
+           target="_blank"
+           style="display:inline-block; padding:10px 24px; background:var(--accent); color:#fff; border-radius:var(--radius); text-decoration:none; font-size:13px; font-family:var(--mono);">
+          Download Excel Report ↓
+        </a>
+      </div>`;
+  }
+  else if (data.display_type === 'card' && data.summary && data.total === 0) {
+    // isCustomerExists or boolean
+    const isExists = data.summary.includes('EXISTS') && !data.summary.includes('NOT');
+    html += `
+      <div class="bool-card">
+        <div class="bool-badge ${isExists ? 'exists' : 'not-exists'}">
+          ${isExists ? '✓ EXISTS' : '✗ NOT FOUND'}
+        </div>
+        <div class="bool-sub">${esc(data.summary)}</div>
+      </div>`;
+  }
+  else if (!data.rows || data.rows.length === 0) {
+    html += `
+      <div style="text-align:center; padding:40px; color:var(--text3); font-family:var(--mono); font-size:13px;">
+        No records returned from API
+      </div>`;
+  }
+
+  // URL bar
+  if (data.final_url) {
+    html += `
+      <div class="url-bar">
+        <span class="url-method">GET</span>
+        ${esc(data.final_url)}
+      </div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+function renderTable(columns, rows) {
+  if (!columns || columns.length === 0) {
+    columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  }
+  let html = `<div class="table-wrap"><table class="data-table"><thead><tr>`;
+  for (const col of columns) {
+    html += `<th>${esc(col)}</th>`;
+  }
+  html += `</tr></thead><tbody>`;
+  for (const row of rows) {
+    html += `<tr>`;
+    for (const col of columns) {
+      const val = row[col];
+      let cls = '';
+      let display = '';
+      if (val === null || val === undefined) { cls = 'null-val'; display = 'null'; }
+      else if (val === true) { cls = 'bool-true'; display = 'true'; }
+      else if (val === false) { cls = 'bool-false'; display = 'false'; }
+      else if (typeof val === 'number') { cls = 'num-val'; display = String(val); }
+      else if (typeof val === 'object') { display = JSON.stringify(val); }
+      else { display = String(val); }
+      html += `<td class="${cls}" title="${esc(display)}">${esc(display)}</td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderCards(rows) {
+  let html = `<div class="info-cards-grid">`;
+  for (const row of rows) {
+    const keys = Object.keys(row).filter(k => !['__v','updatedAt'].includes(k));
+    for (const key of keys) {
+      const val = row[key];
+      const display = val === null ? 'null' : typeof val === 'object' ? JSON.stringify(val) : String(val);
+      html += `
+        <div class="info-card">
+          <div class="info-card-key">${esc(key)}</div>
+          <div class="info-card-val">${esc(display)}</div>
+        </div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+
+function renderError(data, query) {
+  const body = document.getElementById('result-body');
+  body.classList.add('visible');
+  document.getElementById('loading-state').classList.remove('visible');
+
+  let html = `
+    <div class="error-card">
+      <div class="error-title">⚠ ${esc(data.error_type || 'Error')}</div>
+      <div class="error-msg">${esc(data.message || 'An error occurred.')}</div>`;
+  if (data.prompt) {
+    html += `<div class="error-prompt">→ ${esc(data.prompt)}</div>`;
+  }
+  html += `</div>`;
+  body.innerHTML = html;
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function copyWebhook() {
+  navigator.clipboard.writeText(WEBHOOK).catch(() => {});
+  document.getElementById('webhook-display').style.color = 'var(--green)';
+  setTimeout(() => document.getElementById('webhook-display').style.color = '', 1500);
+}
+</script>
+</body>
+</html>
