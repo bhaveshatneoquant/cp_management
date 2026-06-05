@@ -9,31 +9,38 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:       #0e0f13;
-  --bg2:      #161820;
-  --bg3:      #1e2029;
-  --bg4:      #262830;
-  --line:     rgba(255,255,255,0.07);
-  --line2:    rgba(255,255,255,0.13);
-  --text:     #e8e9ee;
-  --text2:    #9a9caa;
-  --text3:    #5a5c6a;
-  --accent:   #4f8ef7;
-  --accent2:  #a78bfa;
-  --green:    #34d399;
-  --yellow:   #fbbf24;
-  --red:      #f87171;
-  --mono:     'IBM Plex Mono', monospace;
-  --sans:     'IBM Plex Sans', sans-serif;
-  --radius:   6px;
-  --radius2:  10px;
+  --bg:        #ffffff;
+  --bg2:       #fdf4f7;
+  --bg3:       #f9eaf0;
+  --bg4:       #f3d8e5;
+  --line:      rgba(200,27,93,0.10);
+  --line2:     rgba(200,27,93,0.20);
+  --text:      #1a0a10;
+  --text2:     #7a3050;
+  --text3:     #b8799a;
+  --accent:    #C81B5D;
+  --accent-dk: #9e1549;
+  --accent-lt: #f7d0e1;
+  --accent2:   #e05c96;
+  --green:     #0e9e6a;
+  --green-bg:  #e6f8f1;
+  --yellow:    #c07800;
+  --yellow-bg: #fef7e5;
+  --red:       #c8281b;
+  --red-bg:    #fdecea;
+  --mono:      'IBM Plex Mono', monospace;
+  --sans:      'IBM Plex Sans', sans-serif;
+  --radius:    6px;
+  --radius2:   10px;
+  --shadow:    0 1px 4px rgba(200,27,93,0.08);
+  --shadow2:   0 4px 18px rgba(200,27,93,0.10);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: var(--sans);
-  background: var(--bg);
+  background: var(--bg3);
   color: var(--text);
   min-height: 100vh;
   display: flex;
@@ -47,39 +54,43 @@ body {
   justify-content: space-between;
   padding: 0 28px;
   height: 52px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg2);
+  border-bottom: 1px solid var(--line2);
+  background: var(--accent);
   position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 10px rgba(200,27,93,0.18);
 }
 .topbar-logo {
   font-family: var(--mono);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--text);
+  color: #fff;
   display: flex; align-items: center; gap: 10px;
 }
 .logo-badge {
-  background: var(--accent);
+  background: rgba(255,255,255,0.18);
   color: #fff;
   font-size: 10px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 3px;
   letter-spacing: 0.05em;
+  border: 1px solid rgba(255,255,255,0.25);
 }
 .topbar-meta {
   display: flex; align-items: center; gap: 16px;
-  font-size: 11px; color: var(--text3); font-family: var(--mono);
+  font-size: 11px; color: rgba(255,255,255,0.75); font-family: var(--mono);
 }
 .status-indicator {
   display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--text2);
+  font-size: 11px; color: rgba(255,255,255,0.85);
 }
 .status-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #7affc8;
+  box-shadow: 0 0 6px #7affc8;
   animation: blink 2.5s infinite;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
 /* ── Layout ── */
 .layout {
@@ -93,10 +104,11 @@ body {
 .left-panel {
   width: 320px;
   min-width: 320px;
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--line2);
   display: flex;
   flex-direction: column;
-  background: var(--bg2);
+  background: var(--bg);
+  box-shadow: 2px 0 12px rgba(200,27,93,0.05);
 }
 
 .panel-section {
@@ -106,18 +118,18 @@ body {
 .panel-label {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 0.1em;
+  color: var(--accent);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 12px;
+  font-weight: 600;
 }
 
 /* Natural language input */
-.nl-input-wrap { position: relative; }
 textarea#nl-query {
   width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--line2);
+  background: var(--bg2);
+  border: 1.5px solid var(--line2);
   border-radius: var(--radius);
   padding: 10px 12px;
   font-size: 13px;
@@ -128,29 +140,33 @@ textarea#nl-query {
   min-height: 72px;
   max-height: 120px;
   line-height: 1.55;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-textarea#nl-query:focus { border-color: var(--accent); }
+textarea#nl-query:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,27,93,0.08);
+}
 textarea#nl-query::placeholder { color: var(--text3); }
 
 .ask-btn {
-  margin-top: 8px;
+  margin-top: 9px;
   width: 100%;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: var(--radius);
-  padding: 9px 0;
+  padding: 10px 0;
   font-size: 13px;
   font-family: var(--sans);
   font-weight: 500;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 7px;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(200,27,93,0.25);
 }
-.ask-btn:hover { opacity: 0.88; }
+.ask-btn:hover { background: var(--accent-dk); box-shadow: 0 4px 14px rgba(200,27,93,0.35); }
 .ask-btn:active { transform: scale(0.98); }
-.ask-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; }
+.ask-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; box-shadow: none; }
 
 /* Divider */
 .or-divider {
@@ -159,74 +175,81 @@ textarea#nl-query::placeholder { color: var(--text3); }
   padding: 10px 0 2px;
 }
 .or-divider::before, .or-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--line);
+  content: ''; flex: 1; height: 1px; background: var(--line2);
 }
 
 /* API dropdown */
-.api-select-wrap { margin-top: 10px; }
 select#api-dropdown {
   width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--line2);
+  background: var(--bg2);
+  border: 1.5px solid var(--line2);
   border-radius: var(--radius);
-  padding: 8px 10px;
+  padding: 8px 30px 8px 10px;
   font-size: 12px;
   font-family: var(--mono);
   color: var(--text);
   outline: none;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a9caa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C81B5D' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  padding-right: 30px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-select#api-dropdown:focus { border-color: var(--accent); }
-select#api-dropdown option { background: var(--bg3); }
+select#api-dropdown:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,27,93,0.08);
+}
+select#api-dropdown option { background: #fff; color: var(--text); }
 
 .use-api-btn {
   margin-top: 8px;
   width: 100%;
   background: transparent;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: 1.5px solid var(--accent);
   border-radius: var(--radius);
   padding: 8px 0;
   font-size: 12px;
   font-family: var(--mono);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.03em;
 }
-.use-api-btn:hover { background: rgba(79,142,247,0.08); }
+.use-api-btn:hover { background: var(--accent); color: #fff; }
 
 /* Param fields */
-#param-fields { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+#param-fields { display: flex; flex-direction: column; gap: 9px; }
 .param-group { display: flex; flex-direction: column; gap: 4px; }
 .param-label {
   font-size: 10px;
   font-family: var(--mono);
-  color: var(--text3);
+  color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }
 input.param-input {
-  background: var(--bg3);
-  border: 1px solid var(--line2);
+  background: var(--bg2);
+  border: 1.5px solid var(--line2);
   border-radius: var(--radius);
   padding: 7px 10px;
   font-size: 12px;
   font-family: var(--mono);
   color: var(--text);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-input.param-input:focus { border-color: var(--accent); }
+input.param-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,27,93,0.08);
+}
 input.param-input::placeholder { color: var(--text3); }
+input.param-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Quick queries */
-.quick-list { display: flex; flex-direction: column; gap: 4px; }
+.quick-list { display: flex; flex-direction: column; gap: 3px; }
 .quick-item {
   padding: 7px 10px;
   border-radius: var(--radius);
@@ -236,17 +259,19 @@ input.param-input::placeholder { color: var(--text3); }
   border: none;
   background: none;
   text-align: left;
-  transition: background 0.13s, color 0.13s;
+  transition: background 0.12s, color 0.12s;
   display: flex; align-items: center; gap: 8px;
   font-family: var(--sans);
 }
-.quick-item:hover { background: var(--bg3); color: var(--text); }
+.quick-item:hover { background: var(--accent-lt); color: var(--accent); }
 .quick-item::before {
   content: '›';
-  color: var(--text3);
-  font-size: 14px;
+  color: var(--accent);
+  font-size: 16px;
   flex-shrink: 0;
+  opacity: 0.5;
 }
+.quick-item:hover::before { opacity: 1; }
 
 /* ── Right panel ── */
 .right-panel {
@@ -259,12 +284,13 @@ input.param-input::placeholder { color: var(--text3); }
 
 .result-header {
   padding: 14px 24px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line2);
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--bg2);
   min-height: 52px;
+  box-shadow: 0 1px 4px rgba(200,27,93,0.06);
 }
 .result-title {
   font-family: var(--mono);
@@ -277,9 +303,10 @@ input.param-input::placeholder { color: var(--text3); }
   padding: 2px 9px;
   border-radius: 3px;
   font-family: var(--mono);
-  background: rgba(79,142,247,0.12);
+  background: var(--accent-lt);
   color: var(--accent);
-  border: 1px solid rgba(79,142,247,0.2);
+  border: 1px solid rgba(200,27,93,0.2);
+  font-weight: 600;
 }
 .reason-text {
   font-size: 11px;
@@ -288,12 +315,13 @@ input.param-input::placeholder { color: var(--text3); }
 }
 .record-count {
   font-size: 11px;
-  color: var(--green);
+  color: var(--accent);
   font-family: var(--mono);
-  background: rgba(52,211,153,0.08);
-  border: 1px solid rgba(52,211,153,0.15);
+  background: var(--accent-lt);
+  border: 1px solid rgba(200,27,93,0.2);
   padding: 3px 10px;
   border-radius: 3px;
+  font-weight: 600;
 }
 
 /* Empty state */
@@ -303,17 +331,20 @@ input.param-input::placeholder { color: var(--text3); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
   color: var(--text3);
   font-family: var(--mono);
 }
 .empty-icon {
-  font-size: 42px;
-  opacity: 0.3;
-  margin-bottom: 4px;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--accent-lt);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 6px;
 }
-.empty-label { font-size: 13px; color: var(--text3); }
-.empty-sub { font-size: 11px; color: var(--text3); opacity: 0.6; }
+.empty-icon svg { opacity: 0.5; }
+.empty-label { font-size: 14px; color: var(--text2); font-weight: 500; font-family: var(--sans); }
+.empty-sub { font-size: 12px; color: var(--text3); }
 
 /* Loading */
 .loading-state {
@@ -326,8 +357,8 @@ input.param-input::placeholder { color: var(--text3); }
 }
 .loading-state.visible { display: flex; }
 .spinner {
-  width: 32px; height: 32px;
-  border: 2px solid var(--line2);
+  width: 36px; height: 36px;
+  border: 2.5px solid var(--accent-lt);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -335,35 +366,37 @@ input.param-input::placeholder { color: var(--text3); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text {
   font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text3);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
 }
 .loading-step {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text3);
-  opacity: 0.6;
 }
 
 /* Result body */
 .result-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 22px 26px;
   display: none;
+  background: var(--bg);
 }
 .result-body.visible { display: block; }
 
 /* Summary card */
 .summary-card {
   background: var(--bg2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line2);
   border-radius: var(--radius2);
   padding: 14px 18px;
   margin-bottom: 18px;
   display: flex;
   align-items: center;
   gap: 14px;
+  box-shadow: var(--shadow);
 }
 .summary-icon { font-size: 22px; }
 .summary-info { flex: 1; }
@@ -372,9 +405,10 @@ input.param-input::placeholder { color: var(--text3); }
 
 /* Table */
 .table-wrap {
-  border: 1px solid var(--line);
+  border: 1px solid var(--line2);
   border-radius: var(--radius2);
   overflow: hidden;
+  box-shadow: var(--shadow);
 }
 .data-table {
   width: 100%;
@@ -383,14 +417,13 @@ input.param-input::placeholder { color: var(--text3); }
   font-family: var(--mono);
 }
 .data-table thead tr {
-  background: var(--bg3);
-  border-bottom: 1px solid var(--line2);
+  background: var(--accent);
 }
 .data-table th {
   padding: 10px 14px;
   text-align: left;
-  color: var(--text3);
-  font-weight: 500;
+  color: #fff;
+  font-weight: 600;
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -407,34 +440,40 @@ input.param-input::placeholder { color: var(--text3); }
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr { transition: background 0.12s; }
-.data-table tbody tr:hover { background: var(--bg3); }
+.data-table tbody tr:hover { background: var(--accent-lt); }
+.data-table tbody tr:nth-child(even) { background: var(--bg2); }
+.data-table tbody tr:nth-child(even):hover { background: var(--accent-lt); }
 .data-table td.null-val { color: var(--text3); font-style: italic; }
-.data-table td.bool-true { color: var(--green); }
-.data-table td.bool-false { color: var(--red); }
-.data-table td.num-val { color: var(--accent2); }
+.data-table td.bool-true { color: var(--green); font-weight: 600; }
+.data-table td.bool-false { color: var(--red); font-weight: 600; }
+.data-table td.num-val { color: var(--accent); font-weight: 500; }
 
-/* Card display */
+/* Cards grid */
 .info-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
 }
 .info-card {
   background: var(--bg2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line2);
   border-radius: var(--radius2);
   padding: 14px 16px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
+.info-card:hover { box-shadow: var(--shadow2); border-color: rgba(200,27,93,0.3); }
 .info-card-key {
   font-size: 10px;
   font-family: var(--mono);
-  color: var(--text3);
+  color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   margin-bottom: 5px;
+  font-weight: 600;
 }
 .info-card-val {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   word-break: break-all;
@@ -443,81 +482,92 @@ input.param-input::placeholder { color: var(--text3); }
 /* Bool card */
 .bool-card {
   background: var(--bg2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line2);
   border-radius: var(--radius2);
-  padding: 28px;
+  padding: 32px;
   text-align: center;
-  max-width: 360px;
+  max-width: 380px;
   margin: 0 auto;
+  box-shadow: var(--shadow2);
 }
 .bool-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 18px;
-  font-weight: 600;
-  padding: 10px 24px;
+  font-weight: 700;
+  padding: 12px 28px;
   border-radius: var(--radius);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   font-family: var(--mono);
+  letter-spacing: 0.05em;
 }
-.bool-badge.exists { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
-.bool-badge.not-exists { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+.bool-badge.exists {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1.5px solid rgba(14,158,106,0.25);
+}
+.bool-badge.not-exists {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1.5px solid rgba(200,40,27,0.25);
+}
 .bool-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); }
 
 /* Error state */
 .error-card {
-  background: rgba(248,113,113,0.06);
-  border: 1px solid rgba(248,113,113,0.2);
+  background: var(--red-bg);
+  border: 1px solid rgba(200,40,27,0.2);
   border-radius: var(--radius2);
   padding: 18px 20px;
 }
-.error-title { font-size: 13px; color: var(--red); font-weight: 500; margin-bottom: 6px; }
+.error-title { font-size: 13px; color: var(--red); font-weight: 600; margin-bottom: 6px; }
 .error-msg { font-size: 12px; color: var(--text2); font-family: var(--mono); }
 .error-prompt {
   margin-top: 12px;
   font-size: 12px;
   color: var(--yellow);
   font-family: var(--mono);
-  padding: 8px 12px;
-  background: rgba(251,191,36,0.06);
+  padding: 9px 12px;
+  background: var(--yellow-bg);
   border-radius: var(--radius);
-  border: 1px solid rgba(251,191,36,0.15);
+  border: 1px solid rgba(192,120,0,0.2);
 }
 
 /* URL bar */
 .url-bar {
   margin-top: 16px;
   background: var(--bg2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line2);
   border-radius: var(--radius);
-  padding: 8px 14px;
+  padding: 9px 14px;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text3);
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 9px;
   word-break: break-all;
 }
 .url-method {
-  background: rgba(79,142,247,0.12);
+  background: var(--accent-lt);
   color: var(--accent);
-  border: 1px solid rgba(79,142,247,0.2);
+  border: 1px solid rgba(200,27,93,0.2);
   border-radius: 3px;
-  padding: 1px 7px;
+  padding: 1px 8px;
   font-size: 10px;
   flex-shrink: 0;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <div class="topbar">
   <div class="topbar-logo">
     ◈ CP MANAGEMENT
@@ -528,7 +578,7 @@ input.param-input::placeholder { color: var(--text3); }
       <div class="status-dot" id="status-dot"></div>
       <span id="status-text">n8n connected</span>
     </div>
-    <span id="webhook-display" style="cursor:pointer;" onclick="copyWebhook()" title="Copy webhook URL">
+    <span id="webhook-display" style="cursor:pointer;" onclick="copyWebhook()" title="Click to copy webhook URL">
       localhost:5678/webhook/cp-management-agent
     </span>
   </div>
@@ -539,22 +589,16 @@ input.param-input::placeholder { color: var(--text3); }
   <!-- Left Panel -->
   <div class="left-panel">
 
-    <!-- Natural language -->
     <div class="panel-section">
       <div class="panel-label">Natural Language Query</div>
-      <div class="nl-input-wrap">
-        <textarea id="nl-query" placeholder="e.g. Show pending fees for customer 1042..." rows="3"
-          onkeydown="nlKey(event)"></textarea>
-      </div>
+      <textarea id="nl-query" placeholder="e.g. Show pending fees for customer 1042..." rows="3"
+        onkeydown="nlKey(event)"></textarea>
       <button class="ask-btn" id="ask-btn" onclick="submitNL()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Ask Agent
       </button>
-
-      <div class="or-divider">or</div>
-
-      <!-- Dropdown -->
-      <div class="api-select-wrap">
+      <div class="or-divider">or select API</div>
+      <div style="margin-top:10px;">
         <select id="api-dropdown" onchange="onApiChange()">
           <option value="">— Select API directly —</option>
           <option value="viewAllCustomer">viewAllCustomer — List all customers</option>
@@ -572,7 +616,6 @@ input.param-input::placeholder { color: var(--text3); }
       <button class="use-api-btn" onclick="submitDropdown()">Use Selected API →</button>
     </div>
 
-    <!-- Params -->
     <div class="panel-section">
       <div class="panel-label">Parameters</div>
       <div id="param-fields">
@@ -595,7 +638,6 @@ input.param-input::placeholder { color: var(--text3); }
       </div>
     </div>
 
-    <!-- Quick queries -->
     <div class="panel-section" style="flex:1; overflow-y:auto;">
       <div class="panel-label">Quick Queries</div>
       <div class="quick-list">
@@ -616,27 +658,26 @@ input.param-input::placeholder { color: var(--text3); }
   <div class="right-panel">
 
     <div class="result-header" id="result-header">
-      <div class="result-title" id="result-title">
-        Results
-      </div>
+      <div class="result-title" id="result-title">Results</div>
       <span class="record-count" id="record-count" style="display:none;"></span>
     </div>
 
-    <!-- Empty -->
     <div class="empty-state" id="empty-state">
-      <div class="empty-icon">◈</div>
+      <div class="empty-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C81B5D" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
       <div class="empty-label">No query yet</div>
       <div class="empty-sub">Type a question or select an API from the left panel</div>
     </div>
 
-    <!-- Loading -->
     <div class="loading-state" id="loading-state">
       <div class="spinner"></div>
       <div class="loading-text" id="loading-text">Selecting API...</div>
       <div class="loading-step" id="loading-step">Agent is analyzing your query</div>
     </div>
 
-    <!-- Result -->
     <div class="result-body" id="result-body"></div>
 
   </div>
@@ -659,48 +700,47 @@ function onApiChange() {
   const val = document.getElementById('api-dropdown').value;
   const needsName = val === 'getCustomerByCustomerName';
   const noId = val === 'viewAllCustomer' || val === '';
-  document.getElementById('param-customer-id').disabled = noId;
-  document.getElementById('param-customer-id').style.opacity = noId ? '0.4' : '1';
-  document.getElementById('param-customer-name').disabled = !needsName;
-  document.getElementById('param-customer-name').style.opacity = needsName ? '1' : '0.4';
+  const cidEl = document.getElementById('param-customer-id');
+  const cnEl  = document.getElementById('param-customer-name');
+  cidEl.disabled = noId;
+  cnEl.disabled = !needsName;
 }
 
 function gatherParams() {
   return {
-    customerId: document.getElementById('param-customer-id').value.trim() || null,
+    customerId:   document.getElementById('param-customer-id').value.trim() || null,
     customerName: document.getElementById('param-customer-name').value.trim() || null,
-    pageNumber: parseInt(document.getElementById('param-page').value) || 1,
-    pageSize: parseInt(document.getElementById('param-size').value) || 10
+    pageNumber:   parseInt(document.getElementById('param-page').value) || 1,
+    pageSize:     parseInt(document.getElementById('param-size').value) || 10
   };
 }
 
 async function submitNL() {
   const query = document.getElementById('nl-query').value.trim();
   if (!query) return;
-  const params = gatherParams();
-  await doRequest({ query, ...params });
+  await doRequest({ query, ...gatherParams() });
 }
 
 async function submitDropdown() {
   const selectedApi = document.getElementById('api-dropdown').value;
   if (!selectedApi) { alert('Please select an API from the dropdown.'); return; }
-  const params = gatherParams();
-  await doRequest({ query: `Using API: ${selectedApi}`, selectedApi, ...params });
+  await doRequest({ query: `Using API: ${selectedApi}`, selectedApi, ...gatherParams() });
 }
 
 function setLoading(step1, step2) {
-  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('empty-state').style.display   = 'none';
   document.getElementById('result-body').classList.remove('visible');
   document.getElementById('loading-state').classList.add('visible');
-  document.getElementById('loading-text').textContent = step1;
-  document.getElementById('loading-step').textContent = step2;
+  document.getElementById('loading-text').textContent  = step1;
+  document.getElementById('loading-step').textContent  = step2;
   document.getElementById('ask-btn').disabled = true;
   document.getElementById('record-count').style.display = 'none';
 }
 
 function setStatus(text, ok = true) {
   document.getElementById('status-text').textContent = text;
-  document.getElementById('status-dot').style.background = ok ? '#34d399' : '#f87171';
+  document.getElementById('status-dot').style.background = ok ? '#7affc8' : '#ffaaaa';
+  document.getElementById('status-dot').style.boxShadow  = ok ? '0 0 6px #7affc8' : '0 0 6px #ffaaaa';
 }
 
 async function doRequest(payload) {
@@ -712,12 +752,12 @@ async function doRequest(payload) {
     ['Calling CP API...', 'Fetching data from backend'],
     ['Formatting Results...', 'Structuring response for display']
   ];
-  let stepIdx = 0;
-  const stepTimer = setInterval(() => {
-    if (stepIdx < steps.length) {
-      document.getElementById('loading-text').textContent = steps[stepIdx][0];
-      document.getElementById('loading-step').textContent = steps[stepIdx][1];
-      stepIdx++;
+  let si = 0;
+  const t = setInterval(() => {
+    if (si < steps.length) {
+      document.getElementById('loading-text').textContent = steps[si][0];
+      document.getElementById('loading-step').textContent = steps[si][1];
+      si++;
     }
   }, 1200);
 
@@ -727,21 +767,14 @@ async function doRequest(payload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
-    clearInterval(stepTimer);
+    clearInterval(t);
     const data = await res.json();
     renderResult(data, payload.query || payload.selectedApi);
     setStatus('Ready');
-
   } catch (err) {
-    clearInterval(stepTimer);
+    clearInterval(t);
     setStatus('Error', false);
-    renderError({
-      error: true,
-      error_type: 'CONNECTION_ERROR',
-      message: err.message,
-      prompt: 'Make sure n8n is running and the workflow is active.'
-    }, payload.query);
+    renderError({ error: true, error_type: 'CONNECTION_ERROR', message: err.message, prompt: 'Make sure n8n is running and the workflow is active.' }, payload.query);
   }
 
   document.getElementById('ask-btn').disabled = false;
@@ -752,8 +785,7 @@ function renderResult(data, query) {
   const body = document.getElementById('result-body');
   body.classList.add('visible');
 
-  // Header
-  const title = document.getElementById('result-title');
+  const title   = document.getElementById('result-title');
   const countEl = document.getElementById('record-count');
 
   if (data.error) {
@@ -763,10 +795,7 @@ function renderResult(data, query) {
     return;
   }
 
-  title.innerHTML = `
-    Results
-    <span class="api-tag">${data.api_key || ''}</span>
-    <span class="reason-text">${data.reason || ''}</span>`;
+  title.innerHTML = `Results <span class="api-tag">${data.api_key || ''}</span><span class="reason-text">${data.reason || ''}</span>`;
 
   if (data.total !== undefined) {
     countEl.textContent = `${data.total} record${data.total !== 1 ? 's' : ''}`;
@@ -775,144 +804,102 @@ function renderResult(data, query) {
 
   let html = '';
 
-  // Summary card
   if (data.summary) {
-    const icon = data.display_type === 'download' ? '📥'
-               : data.display_type === 'card' ? '🔍'
-               : '📊';
-    html += `
-      <div class="summary-card">
-        <div class="summary-icon">${icon}</div>
-        <div class="summary-info">
-          <div class="summary-main">${esc(data.summary)}</div>
-          <div class="summary-sub">Query: "${esc(query || '')}"</div>
-        </div>
-      </div>`;
+    const icon = data.display_type === 'download' ? '📥' : data.display_type === 'card' ? '🔍' : '📊';
+    html += `<div class="summary-card">
+      <div class="summary-icon">${icon}</div>
+      <div class="summary-info">
+        <div class="summary-main">${esc(data.summary)}</div>
+        <div class="summary-sub">Query: "${esc(query || '')}"</div>
+      </div></div>`;
   }
 
-  if (data.display_type === 'table' && data.rows && data.rows.length > 0) {
+  if (data.display_type === 'table' && data.rows?.length > 0) {
     html += renderTable(data.columns, data.rows);
-  }
-  else if (data.display_type === 'card' && data.rows && data.rows.length > 0) {
+  } else if (data.display_type === 'card' && data.rows?.length > 0) {
     html += renderCards(data.rows);
-  }
-  else if (data.display_type === 'download') {
-    html += `
-      <div style="text-align:center; padding:30px;">
-        <div style="font-size:40px; margin-bottom:16px;">📥</div>
-        <div style="font-size:14px; color:var(--text); margin-bottom:10px;">Fees report is ready</div>
-        <a href="${API_BASE}/api/fees/downloadFeesReportForCust?customerId=${document.getElementById('param-customer-id').value}"
-           target="_blank"
-           style="display:inline-block; padding:10px 24px; background:var(--accent); color:#fff; border-radius:var(--radius); text-decoration:none; font-size:13px; font-family:var(--mono);">
-          Download Excel Report ↓
-        </a>
-      </div>`;
-  }
-  else if (data.display_type === 'card' && data.summary && data.total === 0) {
-    // isCustomerExists or boolean
-    const isExists = data.summary.includes('EXISTS') && !data.summary.includes('NOT');
-    html += `
-      <div class="bool-card">
-        <div class="bool-badge ${isExists ? 'exists' : 'not-exists'}">
-          ${isExists ? '✓ EXISTS' : '✗ NOT FOUND'}
-        </div>
-        <div class="bool-sub">${esc(data.summary)}</div>
-      </div>`;
-  }
-  else if (!data.rows || data.rows.length === 0) {
-    html += `
-      <div style="text-align:center; padding:40px; color:var(--text3); font-family:var(--mono); font-size:13px;">
-        No records returned from API
-      </div>`;
+  } else if (data.display_type === 'download') {
+    const cid = document.getElementById('param-customer-id').value;
+    html += `<div style="text-align:center;padding:36px;">
+      <div style="font-size:42px;margin-bottom:16px;">📥</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:14px;font-weight:500;">Fees report ready for download</div>
+      <a href="${API_BASE}/api/fees/downloadFeesReportForCust?customerId=${cid}" target="_blank"
+         style="display:inline-block;padding:11px 28px;background:var(--accent);color:#fff;border-radius:var(--radius);text-decoration:none;font-size:13px;font-family:var(--mono);font-weight:600;box-shadow:0 3px 10px rgba(200,27,93,0.3);">
+        ↓ Download Excel Report
+      </a></div>`;
+  } else if (data.display_type === 'card') {
+    const isExists = data.summary?.includes('EXISTS') && !data.summary?.includes('NOT');
+    html += `<div class="bool-card">
+      <div class="bool-badge ${isExists ? 'exists' : 'not-exists'}">${isExists ? '✓ EXISTS' : '✗ NOT FOUND'}</div>
+      <div class="bool-sub">${esc(data.summary || '')}</div></div>`;
+  } else {
+    html += `<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:13px;">No records returned from API</div>`;
   }
 
-  // URL bar
   if (data.final_url) {
-    html += `
-      <div class="url-bar">
-        <span class="url-method">GET</span>
-        ${esc(data.final_url)}
-      </div>`;
+    html += `<div class="url-bar"><span class="url-method">GET</span>${esc(data.final_url)}</div>`;
   }
 
   body.innerHTML = html;
 }
 
 function renderTable(columns, rows) {
-  if (!columns || columns.length === 0) {
-    columns = rows.length > 0 ? Object.keys(rows[0]) : [];
-  }
-  let html = `<div class="table-wrap"><table class="data-table"><thead><tr>`;
-  for (const col of columns) {
-    html += `<th>${esc(col)}</th>`;
-  }
-  html += `</tr></thead><tbody>`;
+  if (!columns?.length) columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  let h = `<div class="table-wrap"><table class="data-table"><thead><tr>`;
+  for (const c of columns) h += `<th>${esc(c)}</th>`;
+  h += `</tr></thead><tbody>`;
   for (const row of rows) {
-    html += `<tr>`;
-    for (const col of columns) {
-      const val = row[col];
-      let cls = '';
-      let display = '';
-      if (val === null || val === undefined) { cls = 'null-val'; display = 'null'; }
-      else if (val === true) { cls = 'bool-true'; display = 'true'; }
-      else if (val === false) { cls = 'bool-false'; display = 'false'; }
-      else if (typeof val === 'number') { cls = 'num-val'; display = String(val); }
-      else if (typeof val === 'object') { display = JSON.stringify(val); }
-      else { display = String(val); }
-      html += `<td class="${cls}" title="${esc(display)}">${esc(display)}</td>`;
+    h += `<tr>`;
+    for (const c of columns) {
+      const v = row[c];
+      let cls = '', display = '';
+      if (v === null || v === undefined) { cls = 'null-val'; display = 'null'; }
+      else if (v === true)  { cls = 'bool-true';  display = 'true'; }
+      else if (v === false) { cls = 'bool-false'; display = 'false'; }
+      else if (typeof v === 'number') { cls = 'num-val'; display = String(v); }
+      else if (typeof v === 'object') { display = JSON.stringify(v); }
+      else { display = String(v); }
+      h += `<td class="${cls}" title="${esc(display)}">${esc(display)}</td>`;
     }
-    html += `</tr>`;
+    h += `</tr>`;
   }
-  html += `</tbody></table></div>`;
-  return html;
+  return h + `</tbody></table></div>`;
 }
 
 function renderCards(rows) {
-  let html = `<div class="info-cards-grid">`;
+  let h = `<div class="info-cards-grid">`;
   for (const row of rows) {
-    const keys = Object.keys(row).filter(k => !['__v','updatedAt'].includes(k));
-    for (const key of keys) {
-      const val = row[key];
-      const display = val === null ? 'null' : typeof val === 'object' ? JSON.stringify(val) : String(val);
-      html += `
-        <div class="info-card">
-          <div class="info-card-key">${esc(key)}</div>
-          <div class="info-card-val">${esc(display)}</div>
-        </div>`;
+    for (const key of Object.keys(row).filter(k => !['__v','updatedAt'].includes(k))) {
+      const v = row[key];
+      const d = v === null ? 'null' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+      h += `<div class="info-card"><div class="info-card-key">${esc(key)}</div><div class="info-card-val">${esc(d)}</div></div>`;
     }
   }
-  html += `</div>`;
-  return html;
+  return h + `</div>`;
 }
 
 function renderError(data, query) {
-  const body = document.getElementById('result-body');
-  body.classList.add('visible');
+  document.getElementById('result-body').classList.add('visible');
   document.getElementById('loading-state').classList.remove('visible');
-
-  let html = `
-    <div class="error-card">
-      <div class="error-title">⚠ ${esc(data.error_type || 'Error')}</div>
-      <div class="error-msg">${esc(data.message || 'An error occurred.')}</div>`;
-  if (data.prompt) {
-    html += `<div class="error-prompt">→ ${esc(data.prompt)}</div>`;
-  }
-  html += `</div>`;
-  body.innerHTML = html;
+  let h = `<div class="error-card">
+    <div class="error-title">⚠ ${esc(data.error_type || 'Error')}</div>
+    <div class="error-msg">${esc(data.message || 'An error occurred.')}</div>`;
+  if (data.prompt) h += `<div class="error-prompt">→ ${esc(data.prompt)}</div>`;
+  document.getElementById('result-body').innerHTML = h + `</div>`;
 }
 
 function esc(s) {
-  return String(s || '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function copyWebhook() {
   navigator.clipboard.writeText(WEBHOOK).catch(() => {});
-  document.getElementById('webhook-display').style.color = 'var(--green)';
-  setTimeout(() => document.getElementById('webhook-display').style.color = '', 1500);
+  const el = document.getElementById('webhook-display');
+  el.style.color = '#fff';
+  el.style.background = 'rgba(255,255,255,0.15)';
+  el.style.borderRadius = '3px';
+  el.style.padding = '2px 6px';
+  setTimeout(() => { el.style.color = ''; el.style.background = ''; el.style.padding = ''; }, 1500);
 }
 </script>
 </body>
