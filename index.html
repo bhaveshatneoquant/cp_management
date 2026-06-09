@@ -730,20 +730,44 @@ function gatherParams() {
   };
 }
 
+// API endpoint map for preview
+const API_ENDPOINT_MAP = {
+  '':                                    'viewAllCustomer',
+  'viewAllCustomer':                     'viewAllCustomer',
+  'getCustomerById_account':             'account_master/getCustomerById',
+  'getPendingTransactionByCustomerId':   'account_master/getPendingTransactionByCustomerId',
+  'isCustomerExists':                    'isCustomerExists',
+  'getCustomerByCustomerName':           'getByCustomerName',
+  'getCustomerById_direct':              'getById',
+  'getTransactionByCustomerId_fees':     'fees/getTransactionByCustomerId',
+  'getFeesByCustId':                     'fees/getFeesByCustId',
+  'getPendingStatusByCustId':            'fees/getPendingStatusByCustId',
+  'downloadFeesReportForCust':           'fees/downloadFeesReportForCust',
+};
+
 function updateUrlPreview() {
   const p = gatherParams();
-  const base = 'http://localhost:8280/IPA/api/{endpoint}';
-  const parts = [];
-  if (p.customerId) parts.push('customerId=' + p.customerId);
-  if (p.customerName) parts.push('customerName=' + encodeURIComponent(p.customerName));
-  parts.push('pageNumber=' + p.pageNumber);
-  parts.push('pageSize='   + p.pageSize);
+  const selectedApi = document.getElementById('api-dropdown').value;
+  const endpoint = API_ENDPOINT_MAP[selectedApi] || 'viewAllCustomer';
+  const base = 'http://localhost:8280/IPA/api/' + endpoint;
+
+  // Always include all params — empty string if not provided (matches your API spec)
+  const isByName = selectedApi === 'getCustomerByCustomerName';
+  let parts = [];
+  if (isByName) {
+    parts.push('customerName=' + encodeURIComponent(p.customerName || ''));
+  } else {
+    parts.push('customerId='  + (p.customerId || ''));
+    parts.push('pageNumber='  + (p.pageNumber || 1));
+    parts.push('pageSize='    + (p.pageSize   || 10));
+  }
+
   const el = document.getElementById('url-preview');
   if (el) el.textContent = base + '?' + parts.join('&');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  ['param-customer-id','param-customer-name','param-page','param-size'].forEach(id => {
+  ['param-customer-id','param-customer-name','param-page','param-size','api-dropdown'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateUrlPreview);
     if (el) el.addEventListener('change', updateUrlPreview);
