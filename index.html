@@ -804,7 +804,16 @@ async function doRequest(payload) {
       body: JSON.stringify(payload)
     });
     clearInterval(t);
-    const data = await res.json();
+
+    // Safe parse — never crash on empty/HTML responses
+    const rawText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch(parseErr) {
+      console.error('RAW RESPONSE:', rawText);
+      throw new Error('n8n returned invalid JSON. Check browser console for raw response. Status: ' + res.status);
+    }
     renderResult(data, payload.query || payload.selectedApi);
     setStatus('Ready');
   } catch (err) {
@@ -816,6 +825,49 @@ async function doRequest(payload) {
   document.getElementById('ask-btn').disabled = false;
 }
 
+// ── Unwrap serviceResponse from raw API data if agent passed it through ──
+function unwrapApiResponse(data) {
+  // Already structured by Format Output node
+  if (data.rows !== undefined) return data;
+
+  // Raw API response passed directly
+  const sr = data.serviceResponse || data.ServiceResponse || data;
+  const listKeys = ['customerList','transactionList','feeList','pendingList','data','list','records','result','results','content'];
+  for (const k of listKeys) {
+    if (sr[k] && Array.isArray(sr[k])) {
+      return { rows: sr[k], display_type: 'table', summary: `Found ${sr[k].length} record(s).`, total_count: sr[k].length, columns: [], error: false };
+    }
+  }
+  if (typeof sr === 'boolean') return { rows: [], display_type: 'boolean', boolean_result: sr, summary: '', total_count: 0, error: false };
+  return data;
+}
+
+// ── Flatten a nested object one level deep for table display ──
+function flattenForDisplay(record) {
+  if (!record || typeof record !== 'object') return record;
+  const flat = {};
+  for (const [k, v] of Object.entries(record)) {
+    if (v === null || v === undefined) { flat[k] = '—'; }
+    else if (Array.isArray(v))         { flat[k] = v.length ? `[${v.length} item${v.length>1?'s':''}]` : '[]'; }
+    else if (typeof v === 'object')    { flat[k] = JSON.stringify(v).slice(0, 60); }
+    else                               { flat[k] = v; }
+  }
+  return flat;
+}
+
+// Priority columns shown first
+const PRIORITY_COLS = ['customerId','customerName','email','contactNumber','status','ipaFees','ipaFrequency','totalFees','accountNumber','isUserActive','createdOn'];
+// Noisy columns to hide
+const HIDE_COLS = ['filePath','mailIdList','makerMailId','isIPAAggrement','isEmailFaxEndemnity','emailFaxEndemnityDoc','address1','address2','contact1','contact2','contact3','isDefaulter','defaultDate','defaultPeriodEndDate','isDefaulterInformed','informDate','defaulterDoc','ipaAggrementDoc','gstNo'];
+
+function smartColumns(rows) {
+  if (!rows.length) return [];
+  const all = [...new Set(rows.flatMap(r => Object.keys(r)))].filter(k => !HIDE_COLS.includes(k));
+  const pri = PRIORITY_COLS.filter(k => all.includes(k));
+  const rest = all.filter(k => !PRIORITY_COLS.includes(k)).sort();
+  return [...pri, ...rest];
+}
+
 function renderResult(data, query) {
   document.getElementById('loading-state').classList.remove('visible');
   const body = document.getElementById('result-body');
@@ -824,6 +876,9 @@ function renderResult(data, query) {
   const title   = document.getElementById('result-title');
   const countEl = document.getElementById('record-count');
 
+  // Unwrap if needed
+  data = unwrapApiResponse(data);
+
   if (data.error) {
     title.innerHTML = `<span style="color:var(--red)">⚠ Error</span>`;
     countEl.style.display = 'none';
@@ -831,71 +886,111 @@ function renderResult(data, query) {
     return;
   }
 
-  title.innerHTML = `Results <span class="api-tag">${data.api_key || ''}</span><span class="reason-text">${data.reason || ''}</span>`;
+  const toolName = data.tool_called || data.api_key || '';
+  const reason   = data.query_understood || data.reason || '';
+  title.innerHTML = `Results ${toolName ? `<span class="api-tag">${esc(toolName)}</span>` : ''}<span class="reason-text">${esc(reason)}</span>`;
 
-  if (data.total !== undefined) {
-    countEl.textContent = `${data.total} record${data.total !== 1 ? 's' : ''}`;
+  // Flatten rows for display
+  let rows = (data.rows || []).map(flattenForDisplay);
+  let columns = (data.columns && data.columns.length) ? data.columns : smartColumns(rows);
+
+  const total = data.total_count || rows.length;
+  if (total > 0) {
+    countEl.textContent = `${total} record${total !== 1 ? 's' : ''}`;
     countEl.style.display = 'inline-flex';
+  } else {
+    countEl.style.display = 'none';
   }
 
   let html = '';
 
-  if (data.summary) {
-    const icon = data.display_type === 'download' ? '📥' : data.display_type === 'card' ? '🔍' : '📊';
+  // Summary card
+  if (data.summary || query) {
+    const icons = { download:'📥', card:'🔍', boolean:'✅', table:'📊', list:'📋' };
+    const icon = icons[data.display_type] || '📊';
     html += `<div class="summary-card">
       <div class="summary-icon">${icon}</div>
       <div class="summary-info">
-        <div class="summary-main">${esc(data.summary)}</div>
+        <div class="summary-main">${esc(data.summary || 'Data retrieved successfully.')}</div>
         <div class="summary-sub">Query: "${esc(query || '')}"</div>
       </div></div>`;
   }
 
-  if (data.display_type === 'table' && data.rows?.length > 0) {
-    html += renderTable(data.columns, data.rows);
-  } else if (data.display_type === 'card' && data.rows?.length > 0) {
-    html += renderCards(data.rows);
-  } else if (data.display_type === 'download') {
+  // Needs more input
+  if (data.needs_input) {
+    html += `<div class="error-card" style="background:var(--yellow-bg);border-color:rgba(192,120,0,0.2);">
+      <div class="error-title" style="color:var(--yellow);">ℹ Input Required</div>
+      <div class="error-msg">${esc(data.missing_param_prompt || 'Please provide a required parameter.')}</div>
+      <div class="error-prompt">Missing: <strong>${esc(data.missing_param || '')}</strong></div>
+    </div>`;
+    body.innerHTML = html;
+    return;
+  }
+
+  // Render based on display type
+  if (data.display_type === 'boolean') {
+    const exists = data.boolean_result === true;
+    html += `<div class="bool-card">
+      <div class="bool-badge ${exists ? 'exists' : 'not-exists'}">${exists ? '✓ EXISTS' : '✗ NOT FOUND'}</div>
+      <div class="bool-sub">${esc(data.summary || '')}</div></div>`;
+  }
+  else if (data.display_type === 'download') {
     const cid = document.getElementById('param-customer-id').value;
     html += `<div style="text-align:center;padding:36px;">
       <div style="font-size:42px;margin-bottom:16px;">📥</div>
       <div style="font-size:14px;color:var(--text);margin-bottom:14px;font-weight:500;">Fees report ready for download</div>
-      <a href="${API_BASE}/api/fees/downloadFeesReportForCust?customerId=${cid}" target="_blank"
+      <a href="${API_BASE}/api/fees/downloadFeesReportForCust?customerId=${esc(cid)}" target="_blank"
          style="display:inline-block;padding:11px 28px;background:var(--accent);color:#fff;border-radius:var(--radius);text-decoration:none;font-size:13px;font-family:var(--mono);font-weight:600;box-shadow:0 3px 10px rgba(200,27,93,0.3);">
         ↓ Download Excel Report
       </a></div>`;
-  } else if (data.display_type === 'card') {
-    const isExists = data.summary?.includes('EXISTS') && !data.summary?.includes('NOT');
-    html += `<div class="bool-card">
-      <div class="bool-badge ${isExists ? 'exists' : 'not-exists'}">${isExists ? '✓ EXISTS' : '✗ NOT FOUND'}</div>
-      <div class="bool-sub">${esc(data.summary || '')}</div></div>`;
-  } else {
-    html += `<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:13px;">No records returned from API</div>`;
   }
-
-  if (data.final_url) {
-    html += `<div class="url-bar"><span class="url-method">GET</span>${esc(data.final_url)}</div>`;
+  else if (data.display_type === 'card' && rows.length > 0) {
+    html += renderCards(rows);
+  }
+  else if (rows.length > 0) {
+    html += renderTable(columns, rows);
+  }
+  else {
+    html += `<div style="text-align:center;padding:48px;color:var(--text3);font-family:var(--mono);font-size:13px;">
+      <div style="font-size:32px;margin-bottom:12px;">∅</div>
+      No records returned from API
+    </div>`;
   }
 
   body.innerHTML = html;
 }
 
+function fmtVal(v) {
+  if (v === null || v === undefined || v === '') return { display: '—', cls: 'null-val' };
+  if (v === true)  return { display: '✓', cls: 'bool-true' };
+  if (v === false) return { display: '✗', cls: 'bool-false' };
+  if (typeof v === 'number') {
+    // Format large numbers with commas
+    return { display: v.toLocaleString('en-IN'), cls: 'num-val' };
+  }
+  const s = String(v);
+  // Status badges
+  if (s === 'Approved') return { display: '<span style="color:var(--green);font-weight:600;">✓ Approved</span>', cls: '', raw: true };
+  if (s === 'Pending')  return { display: '<span style="color:var(--yellow);font-weight:600;">⏳ Pending</span>', cls: '', raw: true };
+  if (s === 'Rejected') return { display: '<span style="color:var(--red);font-weight:600;">✗ Rejected</span>', cls: '', raw: true };
+  if (s.startsWith('[') && s.endsWith(']')) return { display: `<span style="color:var(--accent2);font-size:11px;">${esc(s)}</span>`, cls: '', raw: true };
+  return { display: esc(s), cls: '' };
+}
+
 function renderTable(columns, rows) {
   if (!columns?.length) columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  // Pretty column headers
+  const prettyCol = c => c.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+
   let h = `<div class="table-wrap"><table class="data-table"><thead><tr>`;
-  for (const c of columns) h += `<th>${esc(c)}</th>`;
+  for (const c of columns) h += `<th title="${esc(c)}">${esc(prettyCol(c))}</th>`;
   h += `</tr></thead><tbody>`;
   for (const row of rows) {
     h += `<tr>`;
     for (const c of columns) {
-      const v = row[c];
-      let cls = '', display = '';
-      if (v === null || v === undefined) { cls = 'null-val'; display = 'null'; }
-      else if (v === true)  { cls = 'bool-true';  display = 'true'; }
-      else if (v === false) { cls = 'bool-false'; display = 'false'; }
-      else if (typeof v === 'number') { cls = 'num-val'; display = String(v); }
-      else if (typeof v === 'object') { display = JSON.stringify(v); }
-      else { display = String(v); }
-      h += `<td class="${cls}" title="${esc(display)}">${esc(display)}</td>`;
+      const {display, cls, raw} = fmtVal(row[c]);
+      const rawStr = raw ? '' : String(row[c] ?? '');
+      h += `<td class="${cls}" title="${esc(rawStr)}">${raw ? display : esc(display)}</td>`;
     }
     h += `</tr>`;
   }
