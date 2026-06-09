@@ -638,6 +638,21 @@ input.param-input:disabled { opacity: 0.4; cursor: not-allowed; }
       </div>
     </div>
 
+    <div style="padding: 10px 18px; border-bottom: 1px solid var(--line);">
+      <div class="param-label" style="margin-bottom:6px;">Request Preview</div>
+      <div id="url-preview" style="
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text3);
+        background: var(--bg3);
+        border: 1px solid var(--line2);
+        border-radius: var(--radius);
+        padding: 7px 10px;
+        word-break: break-all;
+        line-height: 1.6;
+      ">http://localhost:8280/IPA/api/{endpoint}?...</div>
+    </div>
+
     <div class="panel-section" style="flex:1; overflow-y:auto;">
       <div class="panel-label">Quick Queries</div>
       <div class="quick-list">
@@ -685,7 +700,7 @@ input.param-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
 <script>
 const WEBHOOK = 'http://localhost:5678/webhook/cp-management-agent';
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'http://localhost:8280/IPA';
 
 function setQuery(q) {
   document.getElementById('nl-query').value = q;
@@ -708,12 +723,33 @@ function onApiChange() {
 
 function gatherParams() {
   return {
-    customerId:   document.getElementById('param-customer-id').value.trim() || null,
+    customerId:   document.getElementById('param-customer-id').value.trim()   || null,
     customerName: document.getElementById('param-customer-name').value.trim() || null,
-    pageNumber:   parseInt(document.getElementById('param-page').value) || 1,
-    pageSize:     parseInt(document.getElementById('param-size').value) || 10
+    pageNumber:   parseInt(document.getElementById('param-page').value)       || 1,
+    pageSize:     parseInt(document.getElementById('param-size').value)       || 10
   };
 }
+
+function updateUrlPreview() {
+  const p = gatherParams();
+  const base = 'http://localhost:8280/IPA/api/{endpoint}';
+  const parts = [];
+  if (p.customerId) parts.push('customerId=' + p.customerId);
+  if (p.customerName) parts.push('customerName=' + encodeURIComponent(p.customerName));
+  parts.push('pageNumber=' + p.pageNumber);
+  parts.push('pageSize='   + p.pageSize);
+  const el = document.getElementById('url-preview');
+  if (el) el.textContent = base + '?' + parts.join('&');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['param-customer-id','param-customer-name','param-page','param-size'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateUrlPreview);
+    if (el) el.addEventListener('change', updateUrlPreview);
+  });
+  updateUrlPreview();
+});
 
 async function submitNL() {
   const query = document.getElementById('nl-query').value.trim();
