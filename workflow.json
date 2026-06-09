@@ -1,0 +1,670 @@
+{
+  "name": "CP Management Agent - APIs as Tools (Ollama)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cp-management-agent",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        400
+      ],
+      "webhookId": "cp-management-agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst query        = body.query || body.chatInput || body.message || '';\nconst customerId   = body.customerId   || null;\nconst customerName = body.customerName || null;\nconst pageNumber   = body.pageNumber   || 1;\nconst pageSize     = body.pageSize     || 10;\nif (!query) throw new Error('No query provided');\nreturn [{ json: { query, customerId, customerName, pageNumber, pageSize } }];"
+      },
+      "id": "node-normalize",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}\n\nContext provided by user:\n- customerId: {{ $json.customerId }}\n- customerName: {{ $json.customerName }}\n- pageNumber: {{ $json.pageNumber }}\n- pageSize: {{ $json.pageSize }}\n\nUse these context values as tool parameters when calling APIs. Return structured JSON only.",
+        "options": {
+          "systemMessage": "You are a CP (Customer Payment) Management Agent with access to 10 tools that call real REST APIs.\n\nYour job:\n1. Read the user query carefully\n2. Pick the most relevant tool\n3. Call it with correct parameters from the query or context\n4. Return ONLY a valid JSON object \u2014 no markdown, no extra text\n\nRULES:\n- If customerId is in the query or context, pass it to the tool\n- If customerName is mentioned, use searchCustomerByName tool\n- For listing all customers, use viewAllCustomers\n- For download requests, call downloadFeesReport\n- If a required parameter is missing, set needs_input=true\n- ALWAYS embed the full tool response in raw_response field\n\nAPI RESPONSE STRUCTURE NOTE:\nThe APIs return: { serviceResponse: { customerList: [...] }, serviceStatus: 'SUCCESS' }\nExtract the actual list from serviceResponse and put records into rows[].\nEach customer has fields: customerId, customerName, email, contactNumber, status,\nipaFees, ipaFrequency, totalFees, accountNumber, createdOn, isUserActive, etc.\nNested arrays like br[] and commercialPaper[] \u2014 show as count string e.g. '[2 records]'\n\nOUTPUT FORMAT \u2014 respond ONLY with this JSON:\n{\n  \"tool_called\": \"<tool name>\",\n  \"query_understood\": \"<one sentence>\",\n  \"needs_input\": false,\n  \"missing_param\": null,\n  \"missing_param_prompt\": null,\n  \"display_type\": \"<table|card|boolean|download>\",\n  \"summary\": \"<one sentence what was found>\",\n  \"columns\": [\"customerId\", \"customerName\", \"status\", ...],\n  \"rows\": [{ \"customerId\": \"...\", \"customerName\": \"...\", ... }],\n  \"single_record\": {},\n  \"boolean_result\": null,\n  \"total_count\": 0,\n  \"error\": false,\n  \"error_message\": null,\n  \"raw_response\": {}\n}\n\nDISPLAY TYPE:\n- table   \u2192 list of customers, transactions, fees\n- card    \u2192 single customer profile\n- boolean \u2192 isCustomerExists result\n- download\u2192 downloadFeesReport called\n\nFor table: put all records in rows[], derive columns[] from the record fields.\nFor card: put the single record in both rows[0] and single_record.\nFor boolean: set boolean_result to true/false.\nAlways set raw_response to the exact tool output."
+        }
+      },
+      "id": "node-cp-agent",
+      "name": "CP Management Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -700,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama3:latest",
+        "options": {
+          "temperature": 0.2,
+          "numPredict": 2000
+        }
+      },
+      "id": "node-ollama",
+      "name": "Ollama - llama3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        580
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "7cnXx3hOyYQDGI6d",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "getCustomerTransactions",
+        "description": "Get transactions for a specific customer from account master. Use when user asks about customer transactions or account history. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/account_master/getCustomerById",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            },
+            {
+              "name": "pageNumber",
+              "value": "={{ $('Normalize Input').first().json.pageNumber || 1 }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "={{ $('Normalize Input').first().json.pageSize || 10 }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-get-customer-transactions",
+      "name": "Tool: getCustomerTransactions",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -1100,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "getPendingTransactions",
+        "description": "Get pending transactions for a customer. Use when user asks about pending payments or outstanding transactions. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/account_master/getPendingTransactionByCustomerId",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            },
+            {
+              "name": "pageNumber",
+              "value": "={{ $('Normalize Input').first().json.pageNumber || 1 }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "={{ $('Normalize Input').first().json.pageSize || 10 }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-pending-transactions",
+      "name": "Tool: getPendingTransactions",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -880,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "isCustomerExists",
+        "description": "Check whether a customer exists in the system. Use when user wants to verify if a customer exists. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/isCustomerExists",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-customer-exists",
+      "name": "Tool: isCustomerExists",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -660,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "viewAllCustomers",
+        "description": "Get a paginated list of all customers. Use when user asks to list all customers or view the full customer directory. No customerId required.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/viewAllCustomer",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            },
+            {
+              "name": "pageNumber",
+              "value": "={{ $('Normalize Input').first().json.pageNumber || 1 }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "={{ $('Normalize Input').first().json.pageSize || 10 }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-view-all-customers",
+      "name": "Tool: viewAllCustomers",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -440,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "searchCustomerByName",
+        "description": "Search for a customer by their name. Use when user provides a customer name and wants to find their details. Requires customerName.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/getByCustomerName",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerName",
+              "value": "={{ $('Normalize Input').first().json.customerName || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-search-by-name",
+      "name": "Tool: searchCustomerByName",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "getCustomerProfile",
+        "description": "Get full profile and details for a specific customer by ID. Use when user wants customer profile, personal details, or basic info. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/getById",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-customer-profile",
+      "name": "Tool: getCustomerProfile",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "getFeeTransactions",
+        "description": "Get fee payment transactions for a customer. Use when user asks about fee payment history or fee-related transactions. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/fees/getTransactionByCustomerId",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            },
+            {
+              "name": "pageNumber",
+              "value": "={{ $('Normalize Input').first().json.pageNumber || 1 }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "={{ $('Normalize Input').first().json.pageSize || 10 }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-fee-transactions",
+      "name": "Tool: getFeeTransactions",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "getAllFees",
+        "description": "Get all fees owed by a customer. Use when user asks about total fees, fee summary, or how much a customer owes. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/fees/getFeesByCustId",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-all-fees",
+      "name": "Tool: getAllFees",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "getPendingFeeStatus",
+        "description": "Get the pending fee payment status for a customer. Use when user asks about overdue fees, pending fee status, or unpaid fees. Requires customerId.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/fees/getPendingStatusByCustId",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-pending-fee-status",
+      "name": "Tool: getPendingFeeStatus",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "name": "downloadFeesReport",
+        "description": "Download an Excel fees report for a customer. Use when user asks to download, export, or get a report of fees. Requires customerId. Returns a file download link.",
+        "method": "GET",
+        "url": "=http://localhost:8280/IPA/api/fees/downloadFeesReportForCust",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $('Normalize Input').first().json.customerId || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "tool-download-report",
+      "name": "Tool: downloadFeesReport",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || $input.first().json.text || '';\n\nlet parsed;\n\n// \u2500\u2500 Step 1: Try to parse agent JSON output \u2500\u2500\ntry {\n  const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!jsonMatch) throw new Error('No JSON block found');\n  parsed = JSON.parse(jsonMatch[0]);\n} catch(e) {\n  const lower = raw.toLowerCase();\n  parsed = {\n    tool_called: 'unknown',\n    query_understood: '',\n    needs_input: lower.includes('please provide') || lower.includes('missing'),\n    missing_param: null,\n    missing_param_prompt: null,\n    display_type: 'error',\n    summary: raw.slice(0, 300),\n    columns: [], rows: [], single_record: {},\n    boolean_result: null, total_count: 0,\n    error: true, error_message: raw.slice(0, 300)\n  };\n}\n\n// \u2500\u2500 Step 2: Unwrap ServiceResponse structure \u2500\u2500\n// Handles: { serviceResponse: { customerList: [...] } }\n// Also handles raw arrays or direct data objects\nfunction unwrapServiceResponse(data) {\n  if (!data || typeof data !== 'object') return { list: [], single: null };\n\n  // Top-level serviceResponse wrapper\n  const sr = data.serviceResponse || data.ServiceResponse || data;\n\n  // Known list keys in CP management API responses\n  const listKeys = [\n    'customerList', 'transactionList', 'feeList', 'pendingList',\n    'data', 'list', 'records', 'result', 'results', 'content'\n  ];\n\n  for (const key of listKeys) {\n    if (sr[key] && Array.isArray(sr[key])) {\n      return { list: sr[key], single: null, status: data.serviceStatus || '' };\n    }\n  }\n\n  // If sr itself is an array\n  if (Array.isArray(sr)) {\n    return { list: sr, single: null, status: data.serviceStatus || '' };\n  }\n\n  // Boolean / existence check\n  if (typeof sr === 'boolean' || sr === true || sr === false) {\n    return { list: [], single: null, boolean: sr, status: data.serviceStatus || '' };\n  }\n  if (typeof data === 'boolean') {\n    return { list: [], single: null, boolean: data, status: '' };\n  }\n\n  // Single object (customer profile, pending status)\n  if (typeof sr === 'object' && !Array.isArray(sr)) {\n    const keys = Object.keys(sr);\n    // If it looks like a single record (has id or customerId)\n    if (keys.includes('id') || keys.includes('customerId')) {\n      return { list: [sr], single: sr, status: data.serviceStatus || '' };\n    }\n    // Wrap any remaining object as single\n    return { list: [sr], single: sr, status: data.serviceStatus || '' };\n  }\n\n  return { list: [], single: null, status: '' };\n}\n\n// \u2500\u2500 Step 3: Flatten nested objects for table display \u2500\u2500\nfunction flattenRecord(record, prefix) {\n  if (!record || typeof record !== 'object') return {};\n  const flat = {};\n  for (const [k, v] of Object.entries(record)) {\n    const key = prefix ? `${prefix}.${k}` : k;\n    if (v === null || v === undefined) {\n      flat[key] = null;\n    } else if (Array.isArray(v)) {\n      // For nested arrays (br, commercialPaper) store count instead of full array\n      flat[key] = `[${v.length} record${v.length !== 1 ? 's' : ''}]`;\n    } else if (typeof v === 'object') {\n      // Flatten one level deep\n      Object.assign(flat, flattenRecord(v, key));\n    } else {\n      flat[key] = v;\n    }\n  }\n  return flat;\n}\n\n// Priority columns to show first for customer records\nconst PRIORITY_COLS = [\n  'customerId', 'customerName', 'email', 'contactNumber',\n  'status', 'ipaFees', 'ipaFrequency', 'totalFees',\n  'accountNumber', 'designatedAccountNumber',\n  'createdOn', 'updatedOn', 'isUserActive'\n];\n\n// Columns to exclude from table (noisy / always null)\nconst EXCLUDE_COLS = [\n  'filePath', 'mailIdList', 'makerMailId',\n  'isIPAAggrement', 'isEmailFaxEndemnity', 'emailFaxEndemnityDoc',\n  'address1', 'address2', 'contact1', 'contact2', 'contact3',\n  'isDefaulter', 'defaultDate', 'defaultPeriodEndDate',\n  'isDefaulterInformed', 'informDate', 'defaulterDoc',\n  'ipaAggrementDoc'\n];\n\nfunction buildColumns(rows) {\n  if (!rows.length) return [];\n  const allKeys = [...new Set(rows.flatMap(r => Object.keys(r)))];\n  const filtered = allKeys.filter(k => !EXCLUDE_COLS.includes(k));\n\n  // Sort: priority first, then rest alphabetically\n  const priority = PRIORITY_COLS.filter(k => filtered.includes(k));\n  const rest = filtered.filter(k => !PRIORITY_COLS.includes(k)).sort();\n  return [...priority, ...rest];\n}\n\n// \u2500\u2500 Step 4: Try to parse raw API response if agent embedded it \u2500\u2500\nlet apiData = null;\ntry {\n  if (parsed.raw_response) {\n    apiData = typeof parsed.raw_response === 'string'\n      ? JSON.parse(parsed.raw_response)\n      : parsed.raw_response;\n  } else if (parsed.rows && parsed.rows.length > 0) {\n    // Agent already extracted rows \u2014 use them directly\n    apiData = null;\n  }\n} catch(e) { apiData = null; }\n\n// \u2500\u2500 Step 5: Build final output \u2500\u2500\nlet rows = Array.isArray(parsed.rows) ? parsed.rows : [];\nlet columns = Array.isArray(parsed.columns) ? parsed.columns : [];\nlet boolean_result = parsed.boolean_result !== undefined ? parsed.boolean_result : null;\nlet display_type = parsed.display_type || 'table';\nlet summary = parsed.summary || '';\n\n// If agent gave us rows, flatten them\nif (rows.length > 0) {\n  rows = rows.map(r => typeof r === 'object' && r !== null ? flattenRecord(r) : r);\n  if (columns.length === 0) columns = buildColumns(rows);\n}\n\n// If agent gave no rows but we have raw API data from the response, unwrap it\nif (rows.length === 0 && apiData) {\n  const unwrapped = unwrapServiceResponse(apiData);\n  if (unwrapped.boolean !== undefined) {\n    boolean_result = unwrapped.boolean;\n    display_type = 'boolean';\n  } else if (unwrapped.list.length > 0) {\n    rows = unwrapped.list.map(r => flattenRecord(r));\n    columns = buildColumns(rows);\n    display_type = 'table';\n    summary = summary || `Found ${rows.length} record(s).`;\n  } else if (unwrapped.single) {\n    rows = [flattenRecord(unwrapped.single)];\n    columns = buildColumns(rows);\n    display_type = 'card';\n  }\n}\n\nconst out = {\n  tool_called:          parsed.tool_called          || 'unknown',\n  query_understood:     parsed.query_understood     || '',\n  needs_input:          parsed.needs_input          === true,\n  missing_param:        parsed.missing_param        || null,\n  missing_param_prompt: parsed.missing_param_prompt || null,\n  display_type,\n  summary:              summary || `Returned ${rows.length} record(s).`,\n  columns,\n  rows,\n  single_record:        (rows.length === 1 && display_type === 'card') ? rows[0] : (parsed.single_record || {}),\n  boolean_result,\n  total_count:          rows.length || (parsed.total_count || 0),\n  error:                parsed.error === true,\n  error_message:        parsed.error_message || null,\n  timestamp:            new Date().toISOString()\n};\n\nreturn [{ json: out }];"
+      },
+      "id": "node-format",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "node-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama - llama3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getCustomerTransactions": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getPendingTransactions": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: isCustomerExists": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: viewAllCustomers": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: searchCustomerByName": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getCustomerProfile": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getFeeTransactions": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getAllFees": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: getPendingFeeStatus": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: downloadFeesReport": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Management Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CP Management Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "instanceId": "ddb13c8b81c1e42a8a106d61d0a4ffc7405c337d42f389c149328cae6ac9784e"
+  },
+  "tags": [
+    {
+      "name": "cp-management"
+    },
+    {
+      "name": "tools-agent"
+    },
+    {
+      "name": "ollama"
+    }
+  ]
+}
