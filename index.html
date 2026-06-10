@@ -579,7 +579,7 @@ input.param-input:disabled { opacity: 0.4; cursor: not-allowed; }
       <span id="status-text">n8n connected</span>
     </div>
     <span id="webhook-display" style="cursor:pointer;" onclick="copyWebhook()" title="Click to copy webhook URL">
-      localhost:5678/webhook/cp-management-agent
+      localhost:5678/webhook-test/cp-management-agent
     </span>
   </div>
 </div>
@@ -699,7 +699,7 @@ input.param-input:disabled { opacity: 0.4; cursor: not-allowed; }
 </div>
 
 <script>
-const WEBHOOK = 'http://localhost:5678/webhook/cp-management-agent';
+const WEBHOOK = 'http://localhost:5678/webhook-test/cp-management-agent';
 const API_BASE = 'http://localhost:8280/IPA';
 
 function setQuery(q) {
